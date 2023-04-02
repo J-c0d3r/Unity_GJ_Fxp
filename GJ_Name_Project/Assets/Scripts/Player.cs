@@ -190,6 +190,12 @@ public class Player : MonoBehaviour
                 {
                     hit.GetComponent<Skeleton>().TakeDamage(damage);
                 }
+
+                if (hit.GetComponent<Box>())
+                {
+                    hit.GetComponent<Box>().DestroyYourSelf();
+                    Debug.Log("bateu na caixa");
+                }
             }
 
 
