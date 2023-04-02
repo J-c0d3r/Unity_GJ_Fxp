@@ -133,11 +133,11 @@ public class Player : MonoBehaviour
         }
 
         if (Input.GetButtonDown("Jump") && !isAttacking && isAlive)
-        {
+        {            
             if (!isJumping)
             {
-                anim.SetInteger("transition", 1);
-                rig.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+                anim.SetInteger("transition", 1);                
+                rig.velocity = new Vector2(rig.velocity.x, jumpForce);                
                 isJumping = true;
                 doubleJump = true;
                 //play audio
@@ -145,7 +145,7 @@ public class Player : MonoBehaviour
             else if (doubleJump)
             {
                 anim.SetInteger("transition", 1);
-                rig.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);                
+                rig.velocity = new Vector2(rig.velocity.x, jumpForce);
                 doubleJump = false;
                 //play audio
             }
