@@ -133,11 +133,11 @@ public class Player : MonoBehaviour
         }
 
         if (Input.GetButtonDown("Jump") && !isAttacking && isAlive)
-        {            
+        {
             if (!isJumping)
             {
-                anim.SetInteger("transition", 1);                
-                rig.velocity = new Vector2(rig.velocity.x, jumpForce);                
+                anim.SetInteger("transition", 1);
+                rig.velocity = new Vector2(rig.velocity.x, jumpForce);
                 isJumping = true;
                 doubleJump = true;
                 //play audio
@@ -292,6 +292,11 @@ public class Player : MonoBehaviour
                 TakeDamage(collision.gameObject.GetComponent<Skeleton>().GetDamage());
             }
 
+        }
+
+        if (collision.gameObject.CompareTag("spike"))
+        {
+            TakeDamage(1);
         }
     }
 
