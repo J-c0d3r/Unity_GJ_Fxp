@@ -1,20 +1,23 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.XR;
 
 public class Platform : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+
+    [SerializeField] private int state;
+
+    private Animator anim;
+
+    private void Start()
     {
-        
+        anim = GetComponent<Animator>();
+
+        anim.SetInteger("state", state);
+
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 
     private void OnCollisionStay2D(Collision2D collision)
     {

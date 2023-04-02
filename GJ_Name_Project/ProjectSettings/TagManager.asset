@@ -8,6 +8,7 @@ TagManager:
   - enemy
   - barrierEnemy
   - spike
+  - heart
   layers:
   - Default
   - TransparentFX
