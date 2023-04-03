@@ -10,6 +10,10 @@ TagManager:
   - spike
   - heart
   - box
+  - deathArea
+  - checkPoint1
+  - checkPoint2
+  - boss
   layers:
   - Default
   - TransparentFX

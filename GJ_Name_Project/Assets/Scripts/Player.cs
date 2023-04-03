@@ -7,7 +7,7 @@ public class Player : MonoBehaviour
 {
     private float movimentX;
     [SerializeField] private int life;
-    [SerializeField] private int damage;
+    [SerializeField] private int damageSword;
     [SerializeField] private float veloc;
     [SerializeField] private float jumpForce;
     [SerializeField] private float FallingThreshold;
@@ -39,6 +39,7 @@ public class Player : MonoBehaviour
     [SerializeField] private Transform atkPointRight;
     [SerializeField] private Transform atkPointLeft;
     [SerializeField] private TrailRenderer tr;
+    [SerializeField] private CheckPoints checkP;
 
     public DialogueManager dialogue;
 
@@ -173,28 +174,32 @@ public class Player : MonoBehaviour
 
             anim.SetInteger("transition", 4);
 
-            Collider2D hit;
+            Collider2D[] hitList;
 
             if (isLookingToRight)
             {
-                hit = Physics2D.OverlapCircle(atkPointRight.position, radius);
+                hitList = Physics2D.OverlapCircleAll(atkPointRight.position, radius);
             }
             else
             {
-                hit = Physics2D.OverlapCircle(atkPointLeft.position, radius);
+                hitList = Physics2D.OverlapCircleAll(atkPointLeft.position, radius);
             }
 
-            if (hit != null)
+            foreach (Collider2D hit in hitList)
             {
                 if (hit.GetComponent<Skeleton>())
                 {
-                    hit.GetComponent<Skeleton>().TakeDamage(damage);
+                    hit.GetComponent<Skeleton>().TakeDamage(damageSword);
                 }
 
                 if (hit.GetComponent<Box>())
                 {
-                    hit.GetComponent<Box>().DestroyYourSelf();
-                    Debug.Log("bateu na caixa");
+                    hit.GetComponent<Box>().DestroyYourSelf();                   
+                }
+
+                if (hit.GetComponent<SkeletonBoss>())
+                {
+                    hit.GetComponent<SkeletonBoss>().TakeDamage(damageSword);
                 }
             }
 
@@ -297,7 +302,11 @@ public class Player : MonoBehaviour
             {
                 TakeDamage(collision.gameObject.GetComponent<Skeleton>().GetDamage());
             }
+        }
 
+        if (collision.gameObject.CompareTag("boss"))
+        {
+            TakeDamage(2);
         }
 
         if (collision.gameObject.CompareTag("spike"))
@@ -321,6 +330,25 @@ public class Player : MonoBehaviour
             life++;
             Destroy(collision.gameObject);
         }
+
+        if (collision.gameObject.CompareTag("deathArea"))
+        {
+            TakeDamage(1);
+            checkP.PlayerRespawn();
+        }
+
+        if (collision.gameObject.CompareTag("checkPoint1"))
+        {
+            collision.gameObject.GetComponent<BoxCollider2D>().enabled = false;
+            checkP.point++;
+        }
+
+        if (collision.gameObject.CompareTag("checkPoint2"))
+        {
+            collision.gameObject.GetComponent<BoxCollider2D>().enabled = false;
+            checkP.point++;
+        }
+
     }
 }
 
