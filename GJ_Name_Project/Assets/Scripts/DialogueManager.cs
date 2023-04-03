@@ -12,6 +12,7 @@ public class DialogueManager : MonoBehaviour
 
     public Animator anim;
 
+    public GameObject dialogueSystem;
 
     private void Start()
     {
@@ -19,7 +20,9 @@ public class DialogueManager : MonoBehaviour
     }
 
     public void StartDialogue(Dialogue dialogue)
-    {
+    {        
+        dialogueSystem.SetActive(true);
+
         anim.SetBool("isOpen", true);
 
         nameTxt.text = dialogue.name;
@@ -63,7 +66,7 @@ public class DialogueManager : MonoBehaviour
 
     void EndDialogue()
     {
-        anim.SetBool("isOpen", false);
+        anim.SetBool("isOpen", false);     
     }
 
 }

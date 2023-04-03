@@ -23,7 +23,10 @@ public class Player : MonoBehaviour
 
 
     private bool isAlive = true;
+    //public bool isOccupied = false;
     private bool isJumping;
+    [SerializeField] public bool isUnlockedDoubleJump;
+    [SerializeField] public bool isUnlockedDash;
     private bool doubleJump;
     private bool isRecovery;
     private bool isAttacking;
@@ -36,10 +39,12 @@ public class Player : MonoBehaviour
     private Animator anim;
     private SpriteRenderer sprite;
     private CapsuleCollider2D coll;
+    private PlayerAudio playerAudio;
     [SerializeField] private Transform atkPointRight;
     [SerializeField] private Transform atkPointLeft;
     [SerializeField] private TrailRenderer tr;
     [SerializeField] private CheckPoints checkP;
+    [SerializeField] private GameManager gm;
 
     public DialogueManager dialogue;
 
@@ -50,6 +55,7 @@ public class Player : MonoBehaviour
         coll = GetComponent<CapsuleCollider2D>();
         anim = GetComponentInChildren<Animator>();
         sprite = GetComponentInChildren<SpriteRenderer>();
+        playerAudio = GetComponent<PlayerAudio>();
     }
 
 
@@ -119,7 +125,7 @@ public class Player : MonoBehaviour
         }
 
 
-        if (Input.GetButtonDown("Dash") && canDash)
+        if (Input.GetButtonDown("Dash") && canDash && isUnlockedDash)
         {
             StartCoroutine(OnDash());
         }
@@ -141,14 +147,14 @@ public class Player : MonoBehaviour
                 rig.velocity = new Vector2(rig.velocity.x, jumpForce);
                 isJumping = true;
                 doubleJump = true;
-                //play audio
+                playerAudio.PlaySFX(playerAudio.jump);
             }
-            else if (doubleJump)
+            else if (doubleJump && isUnlockedDoubleJump)
             {
                 anim.SetInteger("transition", 1);
                 rig.velocity = new Vector2(rig.velocity.x, jumpForce);
                 doubleJump = false;
-                //play audio
+                playerAudio.PlaySFX(playerAudio.jump);
             }
         }
 
@@ -170,7 +176,7 @@ public class Player : MonoBehaviour
         {
             isAttacking = true;
             canMove = false;
-            //play audio
+            playerAudio.PlaySFX(playerAudio.sword);
 
             anim.SetInteger("transition", 4);
 
@@ -194,7 +200,7 @@ public class Player : MonoBehaviour
 
                 if (hit.GetComponent<Box>())
                 {
-                    hit.GetComponent<Box>().DestroyYourSelf();                   
+                    hit.GetComponent<Box>().DestroyYourSelf();
                 }
 
                 if (hit.GetComponent<SkeletonBoss>())
@@ -219,8 +225,9 @@ public class Player : MonoBehaviour
     {
         if (!isRecovery)
         {
-
             life -= dmg;
+            gm.DecreaseHeart();
+            playerAudio.PlaySFX(playerAudio.punch);
 
             if (life <= 0)
             {
@@ -242,7 +249,7 @@ public class Player : MonoBehaviour
         rig.gravityScale = 0f;
         coll.enabled = false;
         //play audio
-        //gameover
+        gm.GameOver();
     }
 
     IEnumerator OnRecover()
@@ -306,7 +313,7 @@ public class Player : MonoBehaviour
 
         if (collision.gameObject.CompareTag("boss"))
         {
-            TakeDamage(2);
+            TakeDamage(1);
         }
 
         if (collision.gameObject.CompareTag("spike"))
@@ -327,8 +334,13 @@ public class Player : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("heart"))
         {
-            life++;
-            Destroy(collision.gameObject);
+            if (life < 3)
+            {
+                life++;
+                gm.IncreaseHeart();
+                Destroy(collision.gameObject);
+                playerAudio.PlaySFX(playerAudio.cure);
+            }
         }
 
         if (collision.gameObject.CompareTag("deathArea"))
@@ -347,6 +359,11 @@ public class Player : MonoBehaviour
         {
             collision.gameObject.GetComponent<BoxCollider2D>().enabled = false;
             checkP.point++;
+        }
+
+        if (collision.gameObject.CompareTag("treeFinalGame"))
+        {
+            gm.Restart();
         }
 
     }

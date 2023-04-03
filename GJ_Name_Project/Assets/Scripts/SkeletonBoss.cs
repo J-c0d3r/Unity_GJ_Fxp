@@ -9,15 +9,19 @@ public class SkeletonBoss : MonoBehaviour
     public float maxVision;
     private bool isPlayerInFront;
     private bool isRecovery;
+    private bool isAttacking;
+    private bool isStunning;
 
     [SerializeField] private float life;
     [SerializeField] private float veloc;
+    [SerializeField] private float radius;
+    [SerializeField] private int damageSword;
 
 
     private Animator anim;
     private Rigidbody2D rig;
     private SpriteRenderer sprite;
-    private BoxCollider2D col;
+    private BoxCollider2D coll;
     private Vector2 direction;
 
     public Transform front;
@@ -25,15 +29,18 @@ public class SkeletonBoss : MonoBehaviour
 
     [SerializeField] private GameObject attackP;
 
+    [SerializeField] private Player player;
 
+    [SerializeField] private DialogueTrigger dialogue;
+  
 
 
     void Start()
     {
         anim = GetComponent<Animator>();
         rig = GetComponent<Rigidbody2D>();
-        col = GetComponent<BoxCollider2D>();
-
+        coll = GetComponent<BoxCollider2D>();
+        sprite = GetComponent<SpriteRenderer>();
         anim.SetInteger("transition", 0);
 
         if (isRight)
@@ -53,14 +60,17 @@ public class SkeletonBoss : MonoBehaviour
 
     private void FixedUpdate()
     {
-        OnMove();
-        FoundPlayer();
+        if (!isStunning)
+        {
+            OnMove();
+            FoundPlayer();
+        }
     }
 
 
     void OnMove()
     {
-        if (isPlayerInFront)
+        if (isPlayerInFront && !isAttacking)
         {
             anim.SetInteger("transition", 1);
 
@@ -88,42 +98,53 @@ public class SkeletonBoss : MonoBehaviour
 
     void FoundPlayer()
     {
-        RaycastHit2D hitRight = Physics2D.Raycast(front.position, direction, maxVision);
-
-        if (hitRight.collider != null)
+        if (!isAttacking)
         {
-            if (hitRight.transform.CompareTag("Player"))
+            RaycastHit2D hitRight = Physics2D.Raycast(front.position, direction, maxVision);
+
+            if (hitRight.collider != null)
             {
-                isPlayerInFront = true;
-
-                float distance = Vector2.Distance(transform.position, hitRight.transform.position);
-
-                if (distance <= stopDistance)
+                if (hitRight.transform.CompareTag("Player"))
                 {
-                    isPlayerInFront = false;
+                    isPlayerInFront = true;
 
-                    anim.SetInteger("transition", 2);
+                    float distance = Vector2.Distance(transform.position, hitRight.transform.position);
+
+                    if (distance <= stopDistance && !isAttacking)
+                    {
+                        StartCoroutine(OnAttack());
+                    }
+                }
+            }
+            else
+            {
+                isPlayerInFront = false;
+                rig.velocity = Vector2.zero;
+                anim.SetInteger("transition", 0);
+            }
+
+            RaycastHit2D behindHit = Physics2D.Raycast(behind.position, -direction, maxVision);
+
+            if (behindHit.collider != null)
+            {
+                if (behindHit.transform.CompareTag("Player"))
+                {
+                    isRight = !isRight;
+                    isPlayerInFront = true;
                 }
             }
         }
-        else
-        {
-            isPlayerInFront = false;
-            rig.velocity = Vector2.zero;
-            anim.SetInteger("transition", 0);
-        }
+    }
 
-        RaycastHit2D behindHit = Physics2D.Raycast(behind.position, -direction, maxVision);
-
-        if (behindHit.collider != null)
-        {
-            if (behindHit.transform.CompareTag("Player"))
-            {
-                isRight = !isRight;
-                isPlayerInFront = true;
-            }
-        }
-
+    IEnumerator OnAttack()
+    {
+        isPlayerInFront = false;
+        isAttacking = true;
+        anim.SetInteger("transition", 2);
+        yield return new WaitForSeconds(1.5f);
+        isPlayerInFront = true;
+        isAttacking = false;
+        //yield return new WaitForSeconds(1f);
 
     }
 
@@ -132,6 +153,7 @@ public class SkeletonBoss : MonoBehaviour
     {
         Gizmos.DrawRay(front.position, direction * maxVision);
         Gizmos.DrawRay(behind.position, -direction * maxVision);
+        Gizmos.DrawWireSphere(attackP.transform.position, radius);
     }
 
 
@@ -141,44 +163,67 @@ public class SkeletonBoss : MonoBehaviour
         {
             life -= dmg;
 
-            StartCoroutine(OnTakeDamage());
-
             if (life <= 0)
             {
-                anim.SetTrigger("death");
+                rig.gravityScale = 0f;
+                rig.velocity = Vector2.zero;
+                coll.enabled = false;
+
+                player.isUnlockedDoubleJump = true;
+                dialogue.isSkelletonBossDefeat = true;
+
+                anim.SetTrigger("death");                
                 veloc = 0f;
                 Destroy(gameObject, 2.1f);
+            }
+            else
+            {
+                anim.SetInteger("transition", 3);
+                StartCoroutine(OnTakeDamage());
             }
         }
     }
 
     IEnumerator OnTakeDamage()
     {
-        sprite.color = Color.red;
-        yield return new WaitForSeconds(0.1f);
-        sprite.color = Color.white;
-        yield return new WaitForSeconds(0.1f);
-        sprite.color = Color.red;
-        yield return new WaitForSeconds(0.1f);
-        sprite.color = Color.white;
-        yield return new WaitForSeconds(0.1f);
-        sprite.color = Color.red;
-        yield return new WaitForSeconds(0.1f);
-        sprite.color = Color.white;
+        isRecovery = true;
+        isStunning = true;
+        rig.gravityScale = 0f;
+        rig.velocity = Vector2.zero;
+        coll.enabled = false;
 
+        yield return new WaitForSeconds(1.1f);
+
+        coll.enabled = true;
+        rig.gravityScale = 1f;
         isRecovery = false;
+        isStunning = false;
     }
 
 
     public void BoxColliderOn()
     {
-        attackP.GetComponent<BoxCollider2D>().enabled = true;
+        //attackP.GetComponent<CircleCollider2D>().enabled = true;
+
+
+        Collider2D[] hitList;
+
+        hitList = Physics2D.OverlapCircleAll(attackP.transform.position, radius);
+
+        foreach (Collider2D hit in hitList)
+        {
+            if (hit.GetComponent<Player>())
+            {
+                hit.GetComponent<Player>().TakeDamage(damageSword);
+            }
+        }
     }
 
 
-    public void BoxColliderOff()
-    {
-        attackP.GetComponent<BoxCollider2D>().enabled = false;
-    }
+
+    //public void BoxColliderOff()
+    //{
+    //    attackP.GetComponent<CircleCollider2D>().enabled = false;
+    //}
 
 }
