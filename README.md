@@ -1,2 +1,2 @@
 # Unity_GJ_Fxp
-Repositório do &lt;game_name> desenvolvido durante a GameJam promovida pelo FarmandoXP. 
+Repositório do Light Night desenvolvido durante a GameJam promovida pelo FarmandoXP. 
